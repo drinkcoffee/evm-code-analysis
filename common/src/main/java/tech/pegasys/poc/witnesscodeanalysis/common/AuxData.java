@@ -25,6 +25,7 @@ import co.nstant.in.cbor.model.UnicodeString;
 import co.nstant.in.cbor.model.UnsignedInteger;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 
 import java.io.ByteArrayInputStream;
 import java.util.List;
@@ -96,6 +97,7 @@ public class AuxData {
     byte b0 = code.get(len-2);
     byte b1 = code.get(len-1);
     int auxLength = (((((int)b0) << 8) & 0xff00) + (((int)b1) & 0xff));
+    //System.out.println("Aux len could be: " + auxLength);
     if (auxLength > len) {
       this.hasAuxData = false;
       return;
@@ -106,15 +108,15 @@ public class AuxData {
     // The Aux Data will be at least 32 (message digest size) and an indication of the
     // storage location (ipfs for example), plus a couple of bytes of formatting.
     // Assume the minimum length is 38 bytes
-    if (auxLength < 39) {
-      this.hasAuxData = false;
-      return;
-    }
-    // Assume that aux data should never be more than... say 100 bytes.
-    if (auxLength > 100) {
-      this.hasAuxData = false;
-      return;
-    }
+//    if (auxLength < 39) {
+//      this.hasAuxData = false;
+//      return;
+//    }
+//    // Assume that aux data should never be more than... say 100 bytes.
+//    if (auxLength > 100) {
+//      this.hasAuxData = false;
+//      return;
+//    }
     int maybeStartOfAuxData = len - auxLength - 2;
     // Check that the first element is a map.
     byte firstByte = this.code.get(maybeStartOfAuxData);
@@ -152,6 +154,7 @@ public class AuxData {
                   this.sourceCodeStorageService = keyStr;
                   // Assume value major type is Byte String
                   ByteString byteString = (ByteString)val;
+                  // TODO the value returned is a CBOR array with type and length bytes before the message digest.
                   this.sourceCodeHash = byteString.getBytes();
                 }
                 else if (keyStr.equals(SOLC)) {
@@ -253,8 +256,12 @@ public class AuxData {
     return sourceCodeStorageService;
   }
 
-  public byte[] getSourceCodeHash() {
-    return sourceCodeHash;
+  public String getSourceCodeHash() {
+    if (this.sourceCodeHash == null) {
+      return "not set";
+    }
+    Bytes asBytes = Bytes.wrap(this.sourceCodeHash);
+    return asBytes.toHexString();
   }
 
   public String getCompilerName() {
